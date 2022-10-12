@@ -1,0 +1,27 @@
+# Workshop schedule {.unnumbered}
+
+```{r}
+#| label: schedule
+#| echo: false
+#| message: false
+
+library("tidyverse")
+
+tribble(~`Time`, ~`Activity`,
+        "09:15-09:30", "Introduction by workshop organizers",
+        "09:30-10:00", "Lecture 1: eyetracking data pre-processing",
+        "10:00-10:45", "Hands-on session 1",
+        "10:45-11:00", "*BREAK*",
+        "11:00-11:30", "Lecture 2: pre-processing (cont'd) and visualization",
+        "11:30-12:15", "Hands-on session 2",
+        "12:15-13:15", "*LUNCH* (provided)",
+        "13:15-13:45", "Lecture 3: overview of statistical analysis",
+        "13:45-14:15", "Hands-on session 3",
+        "14:15-14:30", "*BREAK*",
+        "14:30-15:00", "Lecture 4: cluster-based permutation analysis",
+        "15:00-15:45", "Last hands-on session",
+        "15:45-16:00", "Summary and discussion",
+        "19:00", "*Dinner for Eyehub and workshop participants*") %>%
+  knitr::kable()
+```
+

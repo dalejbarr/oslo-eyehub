@@ -1,0 +1,20 @@
+project:
+  type: book
+
+book:
+  title: "Oslo Eyehub Workshop on Eyetracking Data Analysis"
+  author: "Dale Barr"
+  date: "10/26/2022"
+  chapters:
+    - index.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo
+  pdf:
+    documentclass: scrreprt
+
+
+
