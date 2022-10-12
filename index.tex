@@ -38,7 +38,7 @@
 \makeatother
 \usepackage{xcolor}
 \setlength{\emergencystretch}{3em} % prevent overfull lines
-\setcounter{secnumdepth}{5}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
 % Make \paragraph and \subparagraph free-standing
 \ifx\paragraph\undefined\else
   \let\oldparagraph\paragraph
@@ -79,7 +79,6 @@
 \makeatletter
 \makeatother
 \makeatletter
-\@ifpackageloaded{bookmark}{}{\usepackage{bookmark}}
 \makeatother
 \makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
@@ -135,8 +134,6 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
-  pdftitle={oslo-eyehub},
-  pdfauthor={Dale Barr},
   colorlinks=true,
   linkcolor={blue},
   filecolor={Maroon},
@@ -144,25 +141,37 @@
   urlcolor={Blue},
   pdfcreator={LaTeX via pandoc}}
 
-\title{oslo-eyehub}
-\author{Dale Barr}
-\date{10/10/22}
+\author{}
+\date{}
 
 \begin{document}
-\maketitle
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, borderline west={3pt}{0pt}{shadecolor}, frame hidden, sharp corners, breakable, enhanced, boxrule=0pt]}{\end{tcolorbox}}\fi
-
-\renewcommand*\contentsname{Table of contents}
-{
-\hypersetup{linkcolor=}
-\setcounter{tocdepth}{2}
-\tableofcontents
-}
-\bookmarksetup{startatroot}
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, frame hidden, enhanced, boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}, sharp corners, breakable]}{\end{tcolorbox}}\fi
 
 \hypertarget{workshop-schedule}{%
 \chapter*{Workshop schedule}\label{workshop-schedule}}
 \addcontentsline{toc}{chapter}{Workshop schedule}
+
+\begin{longtable}[]{@{}ll@{}}
+\toprule()
+Time & Activity \\
+\midrule()
+\endhead
+09:15-09:30 & Introduction by workshop organizers \\
+09:30-10:00 & Lecture 1: eyetracking data pre-processing \\
+10:00-10:45 & Hands-on session 1 \\
+10:45-11:00 & \emph{BREAK} \\
+11:00-11:30 & Lecture 2: pre-processing (cont'd) and visualization \\
+11:30-12:15 & Hands-on session 2 \\
+12:15-13:15 & \emph{LUNCH} (provided) \\
+13:15-13:45 & Lecture 3: overview of statistical analysis \\
+13:45-14:15 & Hands-on session 3 \\
+14:15-14:30 & \emph{BREAK} \\
+14:30-15:00 & Lecture 4: cluster-based permutation analysis \\
+15:00-15:45 & Last hands-on session \\
+15:45-16:00 & Summary and discussion \\
+19:00 & \emph{Dinner for Eyehub and workshop participants} \\
+\bottomrule()
+\end{longtable}
 
 
 
