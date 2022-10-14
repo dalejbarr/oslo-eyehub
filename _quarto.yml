@@ -6,6 +6,10 @@ book:
   title: "Oslo Eyehub Workshop on Eyetracking Data Analysis"
   author: "Dale Barr"
   date: "10/26/2022"
+  repo-url: https://github.com/dalejbarr/oslo-eyehub/
+  downloads: [pdf]
+  sharing: [twitter, facebook]
+  page-footer: "Copyright 2022, Dale J. Barr. Content licensed under Creative Commons CC-BY-SA 4.0."
   chapters:
     - index.qmd
 
