@@ -1,0 +1,219 @@
+# Preprocessing 2: Mapping gaze to areas of interest
+
+At this point we have epoched our eyetracking data, resulting in the `edat-epoched.rds` file which looks like so:
+
+```{r}
+#| label: show-epoched-eyedata
+#| echo: false
+#| message: false
+
+library("tidyverse")
+
+edat <- read_rds("data-derived/edat-epoched.rds")
+
+edat %>%
+  head() %>%
+  knitr::kable()
+```
+
+## Mapping point of gaze to image regions
+
+What we need to do now is map the (`x`, `y`) coordinates onto the specific images that appear on the screen, to find out what participants are looking at.
+
+```{r}
+#| label: load-data
+#| eval: false
+library("rsample")   # for bootstrap resampling
+library("tidyverse")
+
+edat <- read_rds("data-derived/edat-epoched.rds")
+```
+
+```{r}
+#| label: set-aois
+locations <- read_csv("data-raw/locations.csv", col_types = "iiiii")
+
+screens <- read_csv("data-raw/screens.csv", col_types = "iicc") %>%
+  inner_join(locations, "loc")
+
+stimuli <- read_csv("data-raw/stimuli.csv", col_types = "iiciccc")
+
+trials <- read_csv("data-raw/trials.csv", col_types = "iiiiii")
+
+subjects <- read_csv("data-raw/subjects.csv", col_types = "ic")
+
+aois <- trials %>%
+  inner_join(stimuli, "iv_id") %>%
+  inner_join(screens, "s_id") %>%
+  select(sub_id, t_id, role, x1, y1, x2, y2)
+```
+
+```{r}
+#| label: map-pog2aoi
+frames_in <- edat %>%
+  inner_join(aois, c("sub_id", "t_id")) %>%
+  filter(x >= x1, x <= x2, y >= y1, y <= y2) %>%
+  select(sub_id, t_id, f_c, sec_c, role)
+
+frames_out <- edat %>% 
+  select(sub_id, t_id, f_c, sec_c) %>%
+  anti_join(frames_in, c("sub_id", "t_id", "f_c")) %>%
+  mutate(role = "(blank)")
+
+pog <- bind_rows(frames_in,
+                 frames_out) %>%
+  arrange(sub_id, t_id, f_c, sec_c) %>%
+  mutate(role = factor(role))
+```
+
+## Dealing with trial dropouts
+
+```{r}
+selections <- trials %>%
+  inner_join(stimuli, "iv_id") %>%
+  inner_join(screens, c("s_id", "resploc" = "loc")) %>%
+  select(sub_id, t_id, role)
+
+all_frames <- pog %>%
+  select(-sec_c, -role) %>%
+  complete(nesting(sub_id, t_id), f_c)
+
+pog_pad <- all_frames %>%
+  anti_join(pog, c("sub_id", "t_id", "f_c")) %>%
+  inner_join(selections, c("sub_id", "t_id"))
+
+pog_cts <- bind_rows(pog %>% mutate(pad = FALSE),
+          pog_pad %>% mutate(pad = TRUE)) %>%
+  arrange(sub_id, t_id, f_c) %>%
+  mutate(role = fct_relevel(role, c("target", "critical",
+                                    "existing", "novel")))
+
+# pog_cts %>%
+#   filter(sub_id == 1L, t_id == 1L) %>%
+#   print(n = +Inf)
+```
+
+## Plot probabilities
+
+### Existing competitors
+
+#### Calculate probabilities
+
+```{r}
+#| label: probs-exist
+compute_probs <- function(x) {
+  x %>%
+    unnest(data) %>%
+    count(group, crit, f_c, role, name = "Y", .drop = FALSE) %>%
+    group_by(group, crit, f_c) %>%
+    mutate(N = sum(Y),
+           p = Y / N) %>% 
+    ungroup()
+}
+
+bootstrap <- function(x) {
+  ## x is a nested dataset
+  bs_child <- x %>%
+    filter(group == "child") %>%
+    slice_sample(n = nrow(.), replace = TRUE)
+  
+  bs_adult <- x %>%
+    filter(group == "adult") %>%
+    slice_sample(n = nrow(.), replace = TRUE)
+  
+  bind_rows(bs_adult, bs_child)  
+}
+
+trial_cond <- trials %>%
+  inner_join(stimuli, "iv_id") %>%
+  inner_join(subjects, "sub_id") %>%
+  select(sub_id, group, t_id, ctype, crit)
+
+prob_sub <- pog_cts %>%
+  inner_join(trial_cond, c("sub_id", "t_id")) %>% 
+  count(sub_id, group, crit, f_c, role,
+        name = "Y", .drop = FALSE) %>% 
+  group_by(sub_id, group, crit, f_c) %>%
+  mutate(N = sum(Y),
+         p = Y/N) %>%
+  ungroup()
+
+pe_nest <- prob_sub %>%
+  nest(data = c(-group, -sub_id))
+
+probs_exist <- compute_probs(pe_nest)
+
+pe_nest %>%
+  bootstrap() %>%
+  compute_probs()
+
+pe_nest %>%
+  bootstrap() %>%
+  pull(sub_id) %>%
+  unique() %>%
+  length()
+
+n_mcarlo <- 10L
+bs_pexist <- map_dfr(seq_len(n_mcarlo), 
+                     function(.x) {
+                       pe_nest %>%
+                         bootstrap() %>%
+                         compute_probs() %>%
+                         mutate(bs_samp = .x)
+  })
+
+```
+
+#### Calculate bootstrapped confidence intervals
+
+```{r}
+
+
+
+```
+
+
+#### Plot by condition
+
+```{r}
+#| label: plot-probs-exist-cond
+ggplot(probs_exist %>% filter(role != "(blank)"),
+       aes(f_c, p, colour = role)) +
+  geom_line() +
+  facet_grid(group~crit)
+```
+
+#### Plot by role
+
+```{r}
+#| label: plot-probs-exist-role
+ggplot(probs_exist, 
+       aes(f_c, p, colour = crit)) +
+  geom_line() +
+  facet_grid(group~role) +
+  theme(legend.position = "top")
+```
+
+
+### Novel competitors
+
+#### Calculate probabilities
+
+```{r}
+#| label: probs-novel
+
+probs_novel <- trial_cond %>%
+  filter(ctype == "novel") %>%
+  mutate(crit = fct_relevel(crit, "untrained", 
+                            "competitor-day2", 
+                            "competitor-day1")) %>%
+  inner_join(pog_cts, c("sub_id", "t_id")) %>% 
+  count(group, crit, f_c, role, name = "Y", .drop = FALSE) %>% 
+  group_by(group, crit, f_c) %>%
+  mutate(N = sum(Y),
+         p = Y / N) %>%
+  ungroup()
+```
+
+#### Plot
+

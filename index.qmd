@@ -1,4 +1,6 @@
-# Workshop schedule {.unnumbered}
+# Overview {.unnumbered}
+
+## Workshop schedule {.unnumbered}
 
 ```{r}
 #| label: schedule

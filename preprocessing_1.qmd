@@ -1,0 +1,120 @@
+# Pre-processing 1: Data import and epoching
+
+## Data import
+
+### Trial information
+
+```{r}
+#| label: trials
+#| message: false
+
+library("tidyverse")
+
+trials <- read_csv("data-raw/trials.csv",
+                   col_types = "iiiiii")
+
+stimuli <- read_csv("data-raw/stimuli.csv",
+                    col_types = "iiciccc")
+
+speech <- read_csv("data-raw/speech-timings.csv",
+                   col_types = "ciii")
+
+```
+
+### Eye data
+
+```{r}
+#| label: import-eye-data
+#| cache: true
+
+## get .gazedata filenames
+adults <- dir("data-raw/adult", full.names = TRUE)
+children <- dir("data-raw/child", full.names = TRUE)
+
+## Tip: try out for just one participant first!
+edat <- read_tsv(c(adults, children),
+                 col_types = cols_only(ID = col_integer(),
+                                       TrialId = col_integer(),
+                                       CursorX = col_integer(),
+                                       CursorY = col_integer(),
+                                       TimestampSec = col_integer(),
+                                       TimestampMicrosec = col_integer(),
+                                       UserDefined_1 = col_character()),
+                 id = "filename") %>%
+  mutate(sub_id = substr(filename, 20, 22) %>% as.integer(),
+         sec = TimestampSec + TimestampMicrosec / 1000000) %>%
+  select(sub_id, t_id = TrialId, f_id = ID,
+         sec, x = CursorX, y = CursorY,
+         phase = UserDefined_1) %>%
+  filter(phase != "Fixation")
+```
+
+## Epoching
+
+We want to time-lock to the onset of the critical stimulus word.
+
+### Calculate time origin ('zero' point)
+
+```{r}
+#| label: epoching
+origin_adj <- trials %>%
+  inner_join(stimuli, "iv_id") %>%
+  select(sub_id, t_id, sound) %>% 
+  inner_join(speech, "sound") %>% 
+  select(-sound, -article, -noun)
+
+## get the time origin
+origins <- edat %>% 
+  filter(phase == "StimSlide") %>%
+  group_by(sub_id, t_id) %>%
+  summarise(sec_z = min(sec),
+            .groups = "drop") %>%
+  inner_join(origin_adj, c("sub_id", "t_id")) %>%
+  mutate(sec_z = sec_z + disambig_point / 1000) %>%
+  select(-disambig_point)
+
+```
+
+### Time-align to zero points
+
+```{r}
+#| label: time-align
+#| cache: true
+
+epdat_pre <- edat %>%
+  inner_join(origins, c("sub_id", "t_id")) %>%
+  mutate(sec_c = sec - sec_z) %>%
+  select(sub_id, t_id, f_id, sec_c, x, y)
+
+# epdat_pre %>%
+#   filter(sub_id == 1L, t_id == 1L) %>%
+#   arrange(f_id) %>%
+#   print(n = +Inf)
+
+origins_frames <- epdat_pre %>%
+  group_by(sub_id, t_id) %>%
+  filter(sec_c > 0) %>%
+  summarise(f_z = min(f_id),
+            .groups = "drop")
+
+epdat <- epdat_pre %>%
+  inner_join(origins_frames, c("sub_id", "t_id")) %>%
+  mutate(f_c = f_id - f_z) %>%
+  select(sub_id, t_id, f_c, sec_c, x, y)
+
+# epdat %>%
+#   filter(sub_id == 1L, t_id == 1L) %>%
+#   arrange(f_c) %>%
+#   print(n = +Inf)
+
+## at this point, you'll probably want to save the epoched data
+
+## if we haven't made a "data-derived" directory, do so now
+if (!dir.exists("data-derived")) dir.create("data-derived")
+
+epdat %>%
+  filter(sec_c >= -30L, f_c <= 90L) %>%
+  saveRDS(file = "data-derived/edat-epoched.rds")
+```
+
+
