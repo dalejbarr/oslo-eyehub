@@ -47,3 +47,8 @@ To find out what version of R you currently have, look at the message that appea
 
 To find out what version of tidyverse you have, type `packageVersion("tidyverse")`. If you need to update tidyverse (i.e., if you have a version before 1.3), type `tidyverse::update_packages()` in the console and follow the instructions. You can also find more information about updating packages [at the psyteachr site](https://psyteachr.github.io/ads-v1/appendix-updating-r.html).
 
+## Textbook
+
+We will be working from the online textbook, [Reproducibly Analyzing Visual-World Eyetracking Data](https://dalejbarr.github.io/vw-analysis).
+
+You will need to download and extract [data-raw.zip](https://osf.io/download/zrcn7/), the raw data we will be working with, into your working directory.
